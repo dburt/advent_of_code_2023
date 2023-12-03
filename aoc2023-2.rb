@@ -1,6 +1,35 @@
 #!/usr/bin/env ruby
 
-n = DATA.read.lines.map do |line|
+def abort_helpfully
+    STDERR.puts "usage: #$0 DATASET PARTCODE"
+    STDERR.puts "  DATASET can be test or real"
+    STDERR.puts "  PARTCODE can be id or power"
+    abort
+end
+
+data = case ARGV[0].to_s.downcase
+when 'test'
+    <<-END
+        Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+        Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+        Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+        Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+        Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+    END
+when 'real'
+    DATA.read
+else
+    abort_helpfully
+end
+
+code = case ARGV[1].to_s.downcase
+when 'id'
+when 'power'
+else
+    abort_helpfully
+end
+
+n = data.lines.map do |line|
     game_id = line[/Game (\d+):/, 1].to_i
     h = Hash.new { 0 }
     line.scan(/(\d+) (\w+)/).each do |n, col|
@@ -10,14 +39,6 @@ n = DATA.read.lines.map do |line|
     game_id if h['red'] <= 12 && h['green'] <= 13 && h['blue'] <= 14
 end.compact.sum
 p n
-
-sample_game = <<-END
-Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
-Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
-Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
-Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
-Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
-END
 
 __END__
 Game 1: 2 red, 2 green; 6 red, 3 green; 2 red, 1 green, 2 blue; 1 red
