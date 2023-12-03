@@ -22,9 +22,11 @@ else
     abort_helpfully
 end
 
-code = case ARGV[1].to_s.downcase
+partcode = case ARGV[1].to_s.downcase
 when 'id'
+    :id
 when 'power'
+    :power
 else
     abort_helpfully
 end
@@ -36,7 +38,11 @@ n = data.lines.map do |line|
         h[col] = [h[col], n.to_i].max
     end
     p(h.merge(game_id:))
-    game_id if h['red'] <= 12 && h['green'] <= 13 && h['blue'] <= 14
+    if partcode == :id
+        game_id if h['red'] <= 12 && h['green'] <= 13 && h['blue'] <= 14
+    elsif partcode == :power
+        h['red'] * h['green'] * h['blue']
+    end
 end.compact.sum
 p n
 
