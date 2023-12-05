@@ -25,7 +25,7 @@ class AocConfig
         @data = if @dataset == 'test'
             test_data
         else
-            File.read(__FILE__.sub(/\.rb$/, '.data'))
+            File.read($0.sub(/\.rb$/, '.data'))
         end
     end
     def abort_helpfully
