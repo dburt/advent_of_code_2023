@@ -6,7 +6,7 @@ test_data = <<-END
 467..114..
 ...*......
 ..35..633.
-......#...
+..@...#...
 617*......
 .....+.58.
 ..592.....
@@ -66,12 +66,25 @@ class EngineSchematic
             number.mark.to_i
         end
     end
+    def adjacent?(component1, component2)
+        component1.y.between?(component2.y - 1, component2.y + 1) && 
+            (component1.x.begin <= component2.x.begin + 1 && component1.x.end >= component2.x.end - 1)
+    end
     def part_number?(component)
         component.type == :number &&
-            symbols.any? do |symbol|
-                component.y.between?(symbol.y - 1, symbol.y + 1) && 
-                    (component.x.begin <= symbol.x.begin + 1 && component.x.end >= symbol.x.end - 1)
-            end
+            symbols.any? {|symbol| adjacent?(component, symbol) }
+    end
+    def gear?(component)
+        component.mark == '*' &&
+            numbers.count {|number| adjacent?(number, component) } == 2
+    end
+    def gears
+        symbols.select {|symbol| gear?(symbol) }
+    end
+    def gear_ratios
+        gears.map do |gear|
+            numbers.select {|number| adjacent?(number, gear) }.map {|number| number.mark.to_i }.inject(:*)
+        end
     end
     def inspect
         prev_y = 0
@@ -80,7 +93,7 @@ class EngineSchematic
             s = "\n" + s unless component.y == prev_y
             effects = case component.type
             when :symbol
-                [:yellow]
+                gear?(component) ? [:yellow] : [:blue]
             when :number
                 part_number?(component) ? [:green] : [:red]
             else []
@@ -95,7 +108,11 @@ if __FILE__ == $0
     config = AocConfig.new(test_data:)
     schematic = EngineSchematic.new(config.data)
     pp schematic
-    # schematic.pretty_print
-    p schematic.part_numbers
-    p schematic.part_numbers.sum
+    if config.part == 1
+        p schematic.part_numbers
+        p schematic.part_numbers.sum
+    elsif config.part == 2
+        p schematic.gear_ratios
+        p schematic.gear_ratios.sum
+    end
 end
