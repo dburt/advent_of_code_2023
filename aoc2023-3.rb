@@ -70,9 +70,7 @@ class EngineSchematic
                 ok = y_range.cover?(number[:y]) &&
                     (x_range.cover?(number[:x].begin) ||
                     x_range.cover?(number[:x].end))
-                if ok && number[:number] == '13'
-                    p [number, symbol, x_range, y_range]
-                end
+                ok
             end
         end.map do |number|
             number[:number].to_i
