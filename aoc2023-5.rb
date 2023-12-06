@@ -41,7 +41,7 @@ END
 
 class Almanac
   attr_reader :seeds, :maps
-  def initialize(data)
+  def initialize(data, seeds_are:)
     @maps = []
     data.lines.each do |line|
       puts line
@@ -49,6 +49,16 @@ class Almanac
       when /^seeds:([ \d]+)/
         puts 'seeds'
         @seeds = $1.split.map(&:to_i)
+        if seeds_are == :individuals
+          nil
+        elsif seeds_are == :ranges
+          @seeds = @seeds.group_by.with_index {|n, i| i / 2 }.
+            map {|_, (start, length)| (start...(start + length)) }
+          n = @seeds.sum {|range| range.size }
+          puts "#{n} seeds!"
+          abort if n > 1_000_000
+          @seeds = @seeds.map(&:to_a).flatten
+        end
       when /^(\w+)-to-(\w+) map:/
         puts 'map'
         @maps << Map.new($2, $1)
@@ -74,7 +84,7 @@ class Almanac
       super
     end
     def add(dest_range_start, src_range_start, range_length)
-      range = src_range_start..(src_range_start + range_length - 1)
+      range = src_range_start...(src_range_start + range_length)
       offset = dest_range_start - src_range_start
       mapped_ranges[range] = offset
     end
@@ -90,9 +100,10 @@ end
 
 if __FILE__ == $0
   config = AocConfig.new(test_data:)
-  almanac = Almanac.new(config.data)
+  seeds_are = [nil, :individuals, :ranges][config.part]
+  almanac = Almanac.new(config.data, seeds_are:)
   # pp almanac
-  p almanac.locations
+  p almanac.locations unless [config.part, config.dataset] == [2, 'real']
   p almanac.locations.min
   # binding.pry
   if config.part == 1
