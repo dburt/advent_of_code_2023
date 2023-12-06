@@ -18,10 +18,10 @@ END
 class AocConfig
     attr_reader :dataset, :part, :data
     def initialize(test_data:)
-        @dataset = ARGV[0].to_s.downcase
-        abort_helpfully unless ['test', 'real'].include?(@dataset)
-        @part = ARGV[1].to_i
+        @part = ARGV[0].to_i
         abort_helpfully unless [1, 2].include?(@part)
+        @dataset = ARGV[1].to_s.downcase
+        abort_helpfully unless ['test', 'real'].include?(@dataset)
         @data = if @dataset == 'test'
             test_data
         else
@@ -29,9 +29,10 @@ class AocConfig
         end
     end
     def abort_helpfully
-        STDERR.puts "usage: #$0 DATASET PARTCODE"
+        STDERR.puts "usage: #$0 PART DATASET"
+        STDERR.puts "  PART can be 1 or 2"
         STDERR.puts "  DATASET can be test or real"
-        STDERR.puts "  PARTCODE can be 1 or 2"
+        STDERR.puts "  e.g. #$0 1 test"
         abort
     end
 end
