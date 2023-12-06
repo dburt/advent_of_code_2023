@@ -59,6 +59,14 @@ class Almanac
       end
     end
   end
+  def map_seed_to_location(seed)
+    maps.inject(seed) do |memo, map|
+      map[memo]
+    end
+  end
+  def locations
+    seeds.map {|seed| map_seed_to_location(seed) }
+  end
 
   class Map < Struct.new(:source, :destination)
     attr_reader :hash
@@ -81,6 +89,8 @@ if __FILE__ == $0
   config = AocConfig.new(test_data:)
   almanac = Almanac.new(config.data)
   pp almanac
+  p almanac.locations
+  p almanac.locations.min
   # binding.pry
   if config.part == 1
   elsif config.part == 2
