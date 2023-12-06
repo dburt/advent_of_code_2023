@@ -60,6 +60,7 @@ class Almanac
     end
   end
   def map_seed_to_location(seed)
+    puts "mapping seed #{seed}..."
     maps.inject(seed) do |memo, map|
       map[memo]
     end
@@ -68,19 +69,21 @@ class Almanac
     seeds.map {|seed| map_seed_to_location(seed) }
   end
 
-  class Map < Struct.new(:source, :destination)
-    attr_reader :hash
-    def initialize(source, destination)
+  class Map < Struct.new(:source, :destination, :mapped_ranges)
+    def initialize(source, destination, mapped_ranges = {})
       super
-      @hash = Hash.new {|h, k| k }
     end
     def add(dest_range_start, src_range_start, range_length)
-      range_length.times do |i|
-        @hash[src_range_start + i] = dest_range_start + i
-      end
+      range = src_range_start..(src_range_start + range_length - 1)
+      offset = dest_range_start - src_range_start
+      mapped_ranges[range] = offset
     end
     def [](src)
-      hash[src]
+      mapped_range = mapped_ranges.detect do |range, offset|
+        range.include?(src)
+      end
+      offset = mapped_range&.last || 0
+      src + offset
     end
   end
 end
@@ -88,7 +91,7 @@ end
 if __FILE__ == $0
   config = AocConfig.new(test_data:)
   almanac = Almanac.new(config.data)
-  pp almanac
+  # pp almanac
   p almanac.locations
   p almanac.locations.min
   # binding.pry
