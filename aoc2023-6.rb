@@ -48,12 +48,13 @@ if __FILE__ == $0
   config = AocConfig.new(test_data:)
   if config.part == 1
     times, distances = config.data.lines.map {|line| line.scan(/\d+/).map(&:to_i) }
-    ways_to_win_each_race = times.zip(distances).map do |t, r|
-      count_integer_winning_button_times(t:, r:)
-    end
-    total_ways_to_win = ways_to_win_each_race.inject(&:*)
-    p({ways_to_win_each_race:, total_ways_to_win:})
   elsif config.part == 2
-    raise NotImplementedError, "waiting for revelation"
+    times, distances = config.data.lines.map {|line| [line.scan(/\d+/).join.to_i] }
   end
+  p({times:, distances:})
+  ways_to_win_each_race = times.zip(distances).map do |t, r|
+    count_integer_winning_button_times(t:, r:)
+  end
+  total_ways_to_win = ways_to_win_each_race.inject(&:*)
+  p({ways_to_win_each_race:, total_ways_to_win:})
 end
