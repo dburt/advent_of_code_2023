@@ -9,5 +9,6 @@ if __FILE__ == $0
   config = AocConfig.new(test_data:)
   if config.part == 1
   elsif config.part == 2
+    raise NotImplementedError
   end
 end
