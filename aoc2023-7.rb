@@ -8,6 +8,9 @@ T55J5 684
 KK677 28
 KTJJT 220
 QQQJA 483
+AAJAJ 1
+JJJJJ 3
+AJAAA 2
 END
 
 card_values = %w(A K Q J T 9 8 7 6 5 4 3 2).reverse
@@ -36,13 +39,13 @@ if __FILE__ == $0
   config = AocConfig.new(test_data:)
   records = config.data.lines.map(&parse_line)
   if config.part == 1
-    records.sort_by! {|hand, bid| hand_value[hand] }
   elsif config.part == 2
     card_values = %w(A K Q T 9 8 7 6 5 4 3 2 J).reverse
-    records.sort_by! {|hand, bid| hand_value[use_jokers[hand]] }
-    # 245386585 is too low
+    original_best_hand_type = best_hand_type
+    best_hand_type = ->(hand) { original_best_hand_type[use_jokers[hand]] }
   end
+  records.sort_by! {|hand, bid| hand_value[hand] }
   ranks = (1..)
-  p [records, ranks]
+  p records.zip(ranks).map {|(hand, bid), rank| [rank, hand.join, bid] }
   p records.zip(ranks).map {|(hand, bid), rank| bid * rank }.sum
 end
