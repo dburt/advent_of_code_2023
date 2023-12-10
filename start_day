@@ -1,0 +1,2 @@
+#!/bin/bash
+cp aoc2023-{template,$1}.rb
