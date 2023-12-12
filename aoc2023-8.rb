@@ -51,7 +51,7 @@ class Node < Struct.new(:name, :left, :right)
     end
   end
   def inspect
-    "(Node #{name} left=#{left.name} right=#{right.name})"
+    "(Node #{name} left=#{left&.name} right=#{right&.name})"
   end
 end
 
@@ -67,7 +67,7 @@ if __FILE__ == $0
       network[$1.to_sym] = [$2.to_sym, $3.to_sym]
     end
   end
-  p [instructions, network]
+  p [instructions, network] if config.dataset == 'test'
   if config.part == 1
     path = [:AAA]
     i = 0
@@ -84,28 +84,29 @@ if __FILE__ == $0
       linked_list[name].left_and_right = [linked_list[left], linked_list[right]]
       network[name] << linked_list[name]
     end
-    node_keys = network.keys.grep(/A$/)
-    nodes = node_keys.map {|key| linked_list[key] }
-    p nodes
-    # exit
-    i = 0
-    # resume:
-    # [28455000000, 1, [:XKT, :NGF, :DPV, :QXK, :XDM, :XLX]]
-    # [28513000000, 0, [:GMJ, :JPS, :MCB, :QMS, :CTM, :LHN]]
-    # [66239000000, 1, [(Node QMH left=NKG right=SDJ), (Node CND left=VKB right=PGQ), (Node TXH left=HNK right=VHQ), (Node QLS left=QBB right=NCG), (Node GQM left=QCG right=GGC), (Node NCT left=SXG right=CLF)]]
-    # 810m17.179s real time, 496m32.236s user time
-    # i, nodes = [28513000000, [:GMJ, :JPS, :MCB, :QMS, :CTM, :LHN].map {|key| linked_list[key] }]
-    # [66239000000, [:QMH, :CND, CND, :TXH, :QLS, :GQM]]
-    # real    946m56.389s
-    i, nodes = [66239000000, [:QMH, :CND, CND, :TXH, :QLS, :GQM]]
-    until nodes.all? {|node| node.terminal? }
-      left_or_right = instructions[i % instructions.length]
-      # nodes.map! {|node| network[node][left_or_right] }
-      nodes.map! {|node| node[left_or_right] }
-      i += 1
-      p [i, left_or_right, nodes] if i % 1_000_000 == 0
-      # [28455000000, 1, [:XKT, :NGF, :DPV, :QXK, :XDM, :XLX]]
+    start_node_keys = network.keys.grep(/A$/)
+    start_nodes = start_node_keys.map {|key| linked_list[key] }
+    p start_nodes
+
+    paths = start_nodes.map do |start_node|
+      i = 0
+      path = [[0, start_node]]
+      node = start_node
+      loop do
+        left_or_right = instructions[i % instructions.length]
+        node = node[left_or_right]
+        i += 1
+        if node.terminal?
+          break if path.any? {|_, visited| node == visited }
+          path << [i, node]
+        end
+      end
+      path
     end
-    p i
+
+    p paths
+    cycle_steps = paths.map {|path| path.last.first - 1 }
+    p cycle_steps
+    p cycle_steps.inject {|memo, x| memo.lcm(x) }
   end
 end
