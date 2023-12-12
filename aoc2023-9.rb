@@ -24,23 +24,25 @@ end
 
 if __FILE__ == $0
   config = AocConfig.new(test_data:)
-  if config.part == 1
-    histories = config.data.lines.map(&:scan_integers)
-    predictions = histories.map do |history|
-      diffs = [history]
-      while not diffs.last.all?(&:zero?)
-        diffs << diffs.last.differences
-      end
-      # diffs.reverse.inject(0) do |memo, diff|
-      #   memo + (diff.last || 0)
-      # end
-      diffs.map(&:last).compact.sum
-
+  histories = config.data.lines.map(&:scan_integers)
+  histories_diffs = histories.map do |history|
+    diffs = [history]
+    while not diffs.last.all?(&:zero?)
+      diffs << diffs.last.differences
     end
-    p predictions
-    p predictions.sum
-    # 1938255807 is too high
-  elsif config.part == 2
-    raise NotImplementedError
+    diffs
   end
+  if config.part == 1
+    predictions = histories_diffs.map do |diffs|
+      diffs.map(&:last).compact.sum
+    end
+  elsif config.part == 2
+    predictions = histories_diffs.map do |diffs|
+      diffs.reverse.inject(0) do |memo, diff|
+        (diff.first || 0) - memo
+      end
+    end
+  end
+  p predictions
+  p predictions.sum
 end
