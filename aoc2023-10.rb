@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require_relative 'aoc2023-3'  # provides AocConfig
+require 'pry'
 
 test_data = <<-END
 7-F7-
@@ -82,13 +83,13 @@ class Grid
   end
   def [](x_y)
     x, y = x_y
-    @rows[y][x]
+    @rows[y][x] if @rows[y]
   end
   def connect_tiles
     each_with_x_y do |tile, (x, y)|
       tile.directions.each do |direction|
         dx, dy = Tile::DIRECTION_OFFSETS[direction]
-        other_tile = @rows[y + dy][x + dx]
+        other_tile = self[[x + dx, y + dy]]
         if other_tile&.has_direction_opposite?(direction)
           tile.connected_tiles << other_tile
         end
@@ -98,7 +99,7 @@ class Grid
   def trace_circuit
     @circuit = [start_tile]
     loop do
-      next_tile = (@circuit[-1].connected_tiles - [@circuit[-2]]).first
+      next_tile = (@circuit[-1].connected_tiles - [@circuit[-2]]).first rescue binding.pry
       break if next_tile == start_tile
       @circuit << next_tile
     end
