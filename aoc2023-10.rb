@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
 require_relative 'aoc2023-3'  # provides AocConfig
-require 'pry'
+require 'set'
 
-test_data = <<-END
+test_data0 = <<-END
 7-F7-
 .FJ|7
 SJLL7
@@ -11,7 +11,33 @@ SJLL7
 LJ.LJ
 END
 
-class Tile < Struct.new(:shape, :directions, :connected_tiles)
+test_data1 = <<-END
+.F----7F7F7F7F-7....
+.|F--7||||||||FJ....
+.||.FJ||||||||L7....
+FJL7L7LJLJ||LJ.L-7..
+L--J.L7...LJS7F-7L7.
+....F-J..F7FJ|L7L7L7
+....L7.F7||L7|.L7L7|
+.....|FJLJ|FJ|F7|.LJ
+....FJL-7.||.||||...
+....L---J.LJ.LJLJ...
+END
+
+test_data = <<-END
+FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+END
+
+class Tile < Struct.new(:shape, :directions, :connected_tiles, :category)
   SHAPE_DIRECTIONS = {
     '|': [:N, :S],  # is a vertical pipe connecting north and south.
     '-': [:E, :W],  # is a horizontal pipe connecting east and west.
@@ -57,7 +83,10 @@ class Grid
     @rows = data.lines.map do |line|
       line.chomp.chars.map do |char|
         Tile.new(char).tap do |tile|
-          @start_tile = tile if char == 'S'
+          if char == 'S'
+            @start_tile = tile
+            tile.category = :circuit
+          end
         end
       end
     end
@@ -68,13 +97,7 @@ class Grid
     @rows.map {|row| row.map {|tile| tile.to_s }.join + "\n" }.join
   end
   def each
-    @rows.each do |row|
-      row.each do |tile|
-        yield tile
-      end
-    end
-  end
-  def each_with_x_y
+    return enum_for(:each) unless block_given?
     @rows.each_with_index do |row, y|
       row.each_with_index do |tile, x|
         yield tile, [x, y]
@@ -86,7 +109,7 @@ class Grid
     @rows[y][x] if @rows[y]
   end
   def connect_tiles
-    each_with_x_y do |tile, (x, y)|
+    each do |tile, (x, y)|
       tile.directions.each do |direction|
         dx, dy = Tile::DIRECTION_OFFSETS[direction]
         other_tile = self[[x + dx, y + dy]]
@@ -101,23 +124,96 @@ class Grid
     loop do
       next_tile = (@circuit[-1].connected_tiles - [@circuit[-2]]).first rescue binding.pry
       break if next_tile == start_tile
+      next_tile.category = :circuit
       @circuit << next_tile
+    end
+  end
+  def categorise_tiles
+    @flood_fill_grid ||= FloodFillGrid.new(self)
+    each do |tile, (x, y)|
+      if tile.category == :circuit
+        nil
+      elsif @flood_fill_grid.filled?(x, y)
+        tile.category = :outside
+      else
+        tile.category = :inside
+      end
+    end
+  end
+  def count_inside
+    count do |tile, (x, y)|
+      tile.category == :inside
+    end
+  end
+end
+class FloodFillGrid
+  attr_reader :rows, :start_tile, :width, :height
+  EMPTY = '.'
+  FILLED = 'O'
+  CORNER_OFFSETS = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+  def initialize(grid)
+    @height = grid.rows.count * 3 + 2
+    @width = grid.rows.first.count * 3 + 2
+    @rows = height.times.map { [EMPTY] * width }
+    grid.each do |tile, (x, y)|
+      @rows[y * 3 + 2][x * 3 + 2] = tile
+      @start_tile = tile if tile.shape == :S
+      tile.directions.each do |direction|
+        dx, dy = Tile::DIRECTION_OFFSETS[direction]
+        @rows[y * 3 + 2 + dy][x * 3 + 2 + dx] = 'X'
+      end
+    end
+    flood_fill
+  end
+  def [](x_y)
+    x, y = x_y
+    rows[y][x] if rows[y]
+  end
+  def filled?(x, y)
+    CORNER_OFFSETS.any? do |dx, dy|
+      self[[3 * x + dx + 2, 3 * y + dy + 2]] == FILLED
+    end
+  end
+  def to_s
+    rows.map {|row| row.to_a.join + "\n" }.join
+  end
+  def flood_fill
+    edges = [[0, 0]]
+    until edges.empty? do
+      edges.each do |x, y|
+        rows[y][x] = FILLED
+      end
+      neighbours = Set.new
+      edges.each do |x, y|
+        Tile::DIRECTION_OFFSETS.values.each do |dx, dy|
+          neighbours << [x + dx, y + dy]
+        end
+      end
+      edges = neighbours.select do |x, y|
+        self[[x, y]] == EMPTY
+      end
     end
   end
 end
 
 if __FILE__ == $0
   config = AocConfig.new(test_data:)
+  grid = Grid.new(config.data)
+  puts grid
   if config.part == 1
-    grid = Grid.new(config.data)
-    puts grid
-    p grid[[0, 2]]
-    p grid[[1, 2]]
-    p grid.start_tile
-    p grid.circuit
-    p grid.circuit.length
+    # p grid[[0, 2]]
+    # p grid[[1, 2]]
+    # p grid.start_tile
+    # p grid.circuit
+    # p grid.circuit.length
     p grid.circuit.length / 2
   elsif config.part == 2
-    raise NotImplementedError
+    # bigger_grid = FloodFillGrid.new(grid)
+    # puts bigger_grid
+    grid.categorise_tiles
+    grid.rows.each do |row|
+      puts row.map {|tile| tile.category.to_s[0] }.join
+    end
+    p grid.count_inside
   end
 end
