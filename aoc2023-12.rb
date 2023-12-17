@@ -24,10 +24,11 @@ class ConditionRecord
     @numbers = numbers.split(/,/).map(&:to_i)
   end
   def permutation_count
-    2 ** string.scan(STATUSES[:unknown]).count
+    2 ** string.scan('?').count
   end
   def each_raw
     return enum_for(:each_raw) unless block_given?
+    # better: length, gaps
     (0...permutation_count).each do |i|
       j = -1
       s = string.gsub('?') {|m| j += 1; i.allbits?(1 << j) ? '#' : '.' }
@@ -41,29 +42,33 @@ class ConditionRecord
       yield s if s.scan(/#+/).map(&:length) == numbers
     end
   end
+  def *(n)
+    self.class.new ([string] * n).join('?') + " " + (numbers * n).join(',')
+  end
 end
 
 if __FILE__ == $0
   config = AocConfig.new(test_data:)
-  if config.part == 1
-    records = config.data.lines.map {|line| ConditionRecord.new(line) }
-    # p records
-    total_permutations = records.map(&:permutation_count).sum
-    p({total_permutations:})
-    # p records[1].each_raw.to_a
-    # p records[1].each_valid.to_a
-    t0 = Time.now
-    arrangements = records.map {|record|
-      # p record.each_raw.to_a
-      # p record.each_valid.to_a
-      record.each_valid.count
-    }
-    p arrangements
-    p arrangements.sum
-    p Time.now - t0
+  records = config.data.lines.map {|line| ConditionRecord.new(line) }
+  # p records
 
-    # better: length, gaps
+  if config.part == 1
+    nil
   elsif config.part == 2
-    raise NotImplementedError
+    records.map! {|record| record * 5 }
   end
+
+  total_permutations = records.map(&:permutation_count).sum
+  p({total_permutations:})
+  # p records[1].each_raw.to_a
+  # p records[1].each_valid.to_a
+  t0 = Time.now
+  arrangements = records.map {|record|
+    # p record.each_raw.to_a
+    # p record.each_valid.to_a
+    record.each_valid.count
+  }
+  p arrangements
+  p arrangements.sum
+  p Time.now - t0
 end
